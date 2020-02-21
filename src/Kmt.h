@@ -303,7 +303,10 @@ double Kmt::ObjVal(double z){
       out += (1 - GiMat(i-1,i-1));
     }
   }
-  return (AbsVal(out)/sqrt(n));
+  
+  double dn = n;
+  
+  return (AbsVal(out)/ (std::sqrt(dn)) );
 }
 
 
@@ -352,9 +355,11 @@ void Kmt::SetT2(){
     }
   }
   
+  double dn = n;
+  
   T2[0] = Optimal;
   T2[1] = nStatus;
-  T2[2] = dMax/ ( std::sqrt(n) );
+  T2[2] = dMax/ ( std::sqrt(dn) );
   
 }
 

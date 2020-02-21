@@ -58,7 +58,7 @@ public:
     //////// Re part
     ReDiv=128;
     RePM=1920;
-    RePM2=3840;
+    RePM2=3841;
     
     for(int j=1;j<=(RePM2);j++){
       
@@ -162,7 +162,7 @@ double Logistic::Re(double x){
   
   const double nGap = 1e-3;  // 10^5
   
-  int nLen = 1e+5;     
+  int nLen = 1e+3;     
 
   double out = 0;
   double xi = SP;
