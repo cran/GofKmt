@@ -18,11 +18,15 @@ private:
   int PM;
   int PM2;
   
-  
   arma::vec ReVec;
   double ReDiv;
   int RePM;
   int RePM2;
+  
+  
+  double Oldx;
+  int rstar;
+  int rstar2;
   
   
 public:
@@ -31,18 +35,23 @@ public:
     Div=1;
     PM=1;
     PM2=1;
+    
+    Oldx=-20;
+    rstar=1;
+    rstar2=1;
+    
+    
   }
   
   Logistic(arma::vec xX, arma::mat IntMat, arma::mat ReMat) 
-    : X(xX.n_elem), SubGiVec1(2561), SubGiVec2(2561), SubGiVec3(2561), ReVec(3841){
+    : X(xX.n_elem), SubGiVec1(1281), SubGiVec2(1281), SubGiVec3(1281), ReVec(1281){
     
     n = xX.n_elem;
     X = xX;
     
-    Div=128;
-    PM=1280;
-    PM2=2561;
-    
+    Div=64;
+    PM=640;
+    PM2=1281;
     
     for(int i=1;i<=3;i++){
       if(i==1){
@@ -56,14 +65,21 @@ public:
     
     
     //////// Re part
-    ReDiv=128;
-    RePM=1920;
-    RePM2=3841;
+    ReDiv=64;
+    RePM=640;
+    RePM2=1281;
     
     for(int j=1;j<=(RePM2);j++){
       
       ReVec[j-1] = ReMat(j-1,0);
     }
+    
+    
+    Oldx=-20;
+    rstar=1;
+    rstar2=1;
+    
+    
     
     
   }
@@ -97,10 +113,16 @@ public:
   double subGi(double x, int nI);
   double Gi(double y, double Xi);
   
-  
-  
+  void Set_rstar();
   
 };
+
+
+void Logistic::Set_rstar(){
+  rstar=1;
+  rstar2=1;
+  Oldx=-20;
+}
 
 double Logistic::fn(double x){
   return R::dlogis(x, 0, 1, 0);
@@ -130,7 +152,16 @@ double Logistic::Re(double x){
   double SP = 0;
   double dInc = 1/(ReDiv); 
   
-  for(int ith=1;ith <= (RePM2 - 1); ith++){
+  
+  if(x>Oldx){
+    rstar=rstar2;
+  }else if(x<Oldx){
+    rstar=1;
+  }
+  
+  
+  
+  for(int ith=rstar;ith <= (RePM2 - 1); ith++){
     if(x< -15){
       nIndex = -1;
       SP = -16;
@@ -144,12 +175,17 @@ double Logistic::Re(double x){
       break;
     }
     if( (x >= -15 + (ith-1)*dInc )&(x < -15 + ith*dInc ) ){
+      rstar2 = ith;
+      
       nIndex  = ith-1;
       SP = -15 + (ith-1)*dInc;
       break;
     }
     
   }
+  
+  
+  Oldx = x;
   
   if(nIndex == -1){
     return ReVec[0];
@@ -386,7 +422,7 @@ double Logistic::subGi(double x, int nI){
   double dInc = 1/(Div); 
   
   for(int ith=1;ith <= (PM2 - 1); ith++){
-    if(x< -10){
+    if(x<-10){
       nIndex = -1;
       SP = -11;
       break;
@@ -405,7 +441,7 @@ double Logistic::subGi(double x, int nI){
     }
     
   }
-  
+
   if(nIndex == -1){
     
     if(nI == 1){

@@ -8,10 +8,12 @@ class Kmt{
   
 private:
   
-  int n;     
+  int n;
   arma::vec X;
   arma::mat GiMat;
   arma::vec T2;
+  arma::vec Modified_T2;
+  
   String strDist;
   
   Normal norm1;
@@ -21,10 +23,18 @@ private:
   double OptimalX;
   double OptimalFVal;
   
+  double OptimalXP;
+  double OptimalFValP;
+  double OptimalXM;
+  double OptimalFValM;
+  
+
+
 public:
   
   Kmt(){
     n = 1 ; 
+    
   }
   
   Kmt(arma::vec xX, int xn, arma::mat NormalMat, arma::mat LogisMat, arma::mat ReMat, arma::mat CauchyMat, String xstrDist)
@@ -42,12 +52,29 @@ public:
     OptimalX = 0;
     OptimalFVal=0;
     
+    OptimalXP = 0;
+    OptimalFValP=0;
+    
+    OptimalXM = 0;
+    OptimalFValM=0;
+    
+    
   }
 
   arma::mat GetGiMat();
   double GetOptX();
   double GetOptFVal();
   arma::vec GetT2();
+  
+  ////////////////////////
+  double GetOptXP();
+  double GetOptFValP();
+  
+  double GetOptXM();
+  double GetOptFValM();
+  ////////////////////////
+  
+  
   
   arma::mat GetGammaMatrix(double x);
   void SetGiMat();
@@ -57,12 +84,16 @@ public:
   double SecantZero(int i, int Mos);
   
   double ObjVal(double z);
-  
   void FindOptimal();
   
   
+  double RawObjVal(double z);
+  void Modified_SetT2();
+  void Modified_FindOptimal();
   
 };
+
+
 
 arma::mat Kmt::GetGiMat(){
   return GiMat;
@@ -79,6 +110,26 @@ double Kmt::GetOptFVal(){
 arma::vec Kmt::GetT2(){
   return T2;
 }
+
+
+
+double Kmt::GetOptXP(){
+  return OptimalXP;
+}
+
+double Kmt::GetOptFValP(){
+  return OptimalFValP;
+}
+
+double Kmt::GetOptXM(){
+  return OptimalXM;
+}
+
+double Kmt::GetOptFValM(){
+  return OptimalFValM;
+}
+
+
 
 
 
@@ -119,6 +170,7 @@ void Kmt::SetGiMat(){
       prod2(1,i-1) = norm1.subGi(Xi,2);
       prod2(2,i-1) = norm1.subGi(Xi,3);
       
+      
     }else if(strDist == strLogistic){
       
       prod1(i-1,1)=logis1.phix(Xi);
@@ -128,6 +180,8 @@ void Kmt::SetGiMat(){
       prod2(0,i-1) = logis1.subGi(Xi,1);
       prod2(1,i-1) = logis1.subGi(Xi,2);
       prod2(2,i-1) = logis1.subGi(Xi,3);
+      
+      
       
     }else{
       
@@ -139,11 +193,17 @@ void Kmt::SetGiMat(){
       prod2(1,i-1) = cauchy1.subGi(Xi,2);
       prod2(2,i-1) = cauchy1.subGi(Xi,3);
       
+      
     }
     
     
   }
   GiMat = prod1*prod2;
+ 
+  /////////////////////////////////
+  logis1.Set_rstar();
+  /////////////////////////////////
+ 
  
 }
 
@@ -306,7 +366,81 @@ double Kmt::ObjVal(double z){
   
   double dn = n;
   
-  return (AbsVal(out)/ (std::sqrt(dn)) );
+  double dOut = 0;
+  dOut = AbsVal(out)/ (std::sqrt(dn)) ;
+  
+  return dOut;
+}
+
+
+
+double Kmt::RawObjVal(double z){
+  
+  double out = 0;
+  
+  int nIndex = 0;
+  
+  for(int i=1;i<=n;i++){
+    if(z < X[(i-1)]){
+      nIndex = i-1;
+      break;
+    }
+  }
+  
+  if(X[(n-1)] <= z){
+    nIndex = n;
+  }
+  
+  double Xi = 0;
+  if(nIndex == 0){
+    
+    for(int i=1;i<=n;i++){
+      Xi = X[(i-1)];
+      
+      if(strDist == strNormal){
+        out -= norm1.Gi(z, Xi);
+      }else if(strDist == strLogistic){
+        out -= logis1.Gi(z, Xi);
+      }else{
+        out -= cauchy1.Gi(z, Xi);
+      }
+      
+      
+    }
+    
+  }else if(nIndex == n){
+    
+    for(int i=1;i<=n;i++){
+      Xi = X[(i-1)];
+      out -= GiMat(i-1,i-1); //Gi(z, Xi)
+    }
+    out += n;
+  }else{
+    for(int i=(nIndex+1);i<=n;i++){
+      Xi = X[(i-1)];
+      
+      if(strDist == strNormal){
+        out -= norm1.Gi(z, Xi);
+      }else if(strDist == strLogistic){
+        out -= logis1.Gi(z, Xi);
+      }else{
+        out -= cauchy1.Gi(z, Xi);
+      }
+      
+    }
+    
+    for(int i=1;i<=nIndex;i++){
+      Xi = X[(i-1)];
+      out += (1 - GiMat(i-1,i-1));
+    }
+  }
+  
+  double dn = n;
+  
+  double dOut = 0;
+  dOut = out/ (std::sqrt(dn)) ;
+  
+  return dOut;
 }
 
 
@@ -319,10 +453,14 @@ void Kmt::SetT2(){
   double U2=0;
   double U=0;
   
+  
   double dMax = 0;
   double Optimal = X[0];
   double Xi = 0;
   int nStatus = 0;
+  
+  
+  
   
   for(int i=1;i<=n;i++){
     
@@ -353,6 +491,8 @@ void Kmt::SetT2(){
       dMax = U;
       Optimal = Xi;
     }
+    
+  
   }
   
   double dn = n;
@@ -361,6 +501,8 @@ void Kmt::SetT2(){
   T2[1] = nStatus;
   T2[2] = dMax/ ( std::sqrt(dn) );
   
+  
+ 
 }
 
 
@@ -378,7 +520,7 @@ void Kmt::FindOptimal(){
   double Zerox = 0;
   
   double T2X = 0;
-  double T2 = 0;
+  double T2Y = 0;
   
   //////////////////////
   
@@ -400,12 +542,14 @@ void Kmt::FindOptimal(){
       OptimalFVal = FVal;
       OldFVal = FVal;
     }
+    
+    
   }
   
   double tmpVal=0;
   double tmpVal2=0;
   double nGap = 0;
-  
+
   for(int i=1;i<=(n-1);i++){
     Xi = X[i-1];
     Xi1 = X[i];
@@ -414,38 +558,42 @@ void Kmt::FindOptimal(){
 
     tmpVal = hiz( (Xi+nGap), i);
     tmpVal2 = hiz( (Xi1-nGap), i);
-    
-    
-    
+
     if( (tmpVal*tmpVal2)<0 ){
       
-      Zerox = SecantZero(i, 1);
-      
-      if( (Zerox < Xi)  | (Zerox >= Xi1) ){
-        Zerox = Xi;
-      }
-      
-      if(Zerox != Xi){
-        FVal = ObjVal(Zerox);
+      for(int nMos=1;nMos<=3;nMos++){
         
-        if(FVal>T2){
-          T2 = FVal;
-          T2X = Zerox;
+        Zerox = SecantZero(i, nMos);
+        
+        if( (Zerox < Xi)  | (Zerox >= Xi1) ){
+          Zerox = Xi;
         }
         
-        if(FVal > OptimalFVal){
+        if(Zerox != Xi){
+          FVal = ObjVal(Zerox);
           
-          OptimalX = T2X;
-          OptimalFVal = FVal;
+          if(FVal>T2Y){
+            T2Y = FVal;
+            T2X = Zerox;
+          }
           
+          if(FVal > OptimalFVal){
+            
+            OptimalX = T2X;
+            OptimalFVal = FVal;
+            
+          }
         }
+        
       }
       
       
     }
-    
-    
+      
+
   }
+    
+    
   
   
   
@@ -464,6 +612,193 @@ void Kmt::FindOptimal(){
 
 
 
+
+void Kmt::Modified_SetT2(){
+  
+  
+  double U1=0;
+  double U2=0;
+  
+  double PU=0;
+  double MU=0;
+  double OptimalP = X[0];
+  double OptimalM = X[0];
+  
+  double Xi = 0;
+  
+  
+  
+  for(int i=1;i<=n;i++){
+    
+    Xi =  X[i-1]; 
+    
+    U1 = 0;
+    
+    for(int k=1;k<=n;k++){
+      if(k<=i){
+        U1 -= GiMat(k-1,k-1);
+      }else{
+        U1 -= GiMat(k-1,i-1);
+      }  
+    }
+    
+    U1 += i; 
+    U2 = U1-1;
+    
+    if(U1<0){
+      if(U1<MU){
+        MU=U1;
+        OptimalM = Xi;
+      }
+    }else{
+      if(U1>PU){
+        PU=U1;
+        OptimalP = Xi;
+      }
+    }
+    
+    
+    
+    if(U2<0){
+      if(U2<MU){
+        MU=U2;
+        OptimalM = Xi;
+      }
+    }else{
+      if(U2>PU){
+        PU=U2;
+        OptimalP = Xi;
+      }
+    }
+    
+  }
+  
+  double dn = n;
+  
+  OptimalXP = OptimalP;
+  OptimalFValP=PU/ ( std::sqrt(dn) );
+  
+  OptimalXM = OptimalM;
+  OptimalFValM=MU/ ( std::sqrt(dn) );
+  
+  
+  
+}
+
+
+
+
+void Kmt::Modified_FindOptimal(){
+  
+  double Xi=0;
+  double Xi1=0;
+  double FVal=0;
+  
+  double Zerox = 0;
+  
+  
+  //////////////////////
+  
+  /////////////////////// i=0
+  
+  Xi = X[0];
+  
+  Zerox = SecantZero(1, 3);
+  
+  if( (Zerox < Xi)  | (Zerox >= Xi1) ){
+    Zerox = Xi;
+  }
+  
+  if(Zerox != Xi){
+    FVal = RawObjVal(Zerox);
+    
+    if(FVal > OptimalFValP){
+      OptimalXP = Zerox;
+      OptimalFValP = FVal;
+      
+    }
+    
+    if(FVal < OptimalFValM){
+      OptimalXM = Zerox;
+      OptimalFValM = FVal;
+      
+    }
+    
+    
+  }
+  
+  double tmpVal=0;
+  double tmpVal2=0;
+  double nGap = 0;
+  
+  for(int i=1;i<=(n-1);i++){
+    Xi = X[i-1];
+    Xi1 = X[i];
+    
+    nGap = (Xi1-Xi)/100;
+    
+    tmpVal = hiz( (Xi+nGap), i);
+    tmpVal2 = hiz( (Xi1-nGap), i);
+    
+    //////////////////////////
+    
+    
+    /////////////////////////
+    
+    if( (tmpVal*tmpVal2)<0 ){
+      
+      
+      for(int nMos=1;nMos<=3;nMos++){
+        
+        Zerox = SecantZero(i, nMos);
+        
+        if( (Zerox < Xi)  | (Zerox >= Xi1) ){
+          Zerox = Xi;
+        }
+        
+        if(Zerox != Xi){
+          FVal = RawObjVal(Zerox);
+          
+          if(FVal > OptimalFValP){
+            OptimalXP = Zerox;
+            OptimalFValP = FVal;
+            
+          }
+          
+          if(FVal < OptimalFValM){
+            OptimalXM = Zerox;
+            OptimalFValM = FVal;
+            
+          }
+        }
+        
+      }
+      
+    }
+    
+    
+  }
+  
+  
+  
+  
+  // i=n
+  FVal = RawObjVal(X[n-1]);
+  
+  if(FVal > OptimalFValP){
+    OptimalXP = X[n-1];
+    OptimalFValP = FVal;
+    
+  }
+  
+  if(FVal < OptimalFValM){
+    OptimalXM = X[n-1];
+    OptimalFValM = FVal;
+    
+  }
+  
+  
+}
 
 
 

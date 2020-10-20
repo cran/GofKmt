@@ -4,12 +4,14 @@
 \alias{KhmaladzeTrans}
 \title{Implementing Khmaladze Martingale Transformation.}
 \usage{
-KhmaladzeTrans(X, strDist, bGraph = FALSE, nNum = 10)
+KhmaladzeTrans(X, Modified = FALSE, strDist, bGraph = FALSE, nNum = 10)
 }
 \arguments{
 \item{X}{a random sample of n observations}
 
-\item{strDist}{the name of the null distribution for the hypothesis test: Normal, Cauchy, or Logistic. Other distributions such as gamma, Weibull and Frechet will be available in later versions.}
+\item{Modified}{a logical value which specifies whether or not to use the modeifed version of the test: False calls the original version while True calls the modified version.}
+
+\item{strDist}{the name of the null distribution for the hypothesis test: Normal, Cauchy, or Logistic. Other distributions such as Gumbel, Weibull and Frechet will be available in later versions.}
 
 \item{bGraph}{a logical value which specifies whether or not to get the graph of the objective function of the martingale transformation.}
 
@@ -18,17 +20,25 @@ KhmaladzeTrans(X, strDist, bGraph = FALSE, nNum = 10)
 \value{
 A list of the following values: 
 \describe{
-\item{opt.x}{ the value of x where the optimum of the objective function - which is also the test statistic - occurs.} 
+\item{opt.x}{ 
+\itemize{
+ \item When Modified is False, opt.x is the value of x where the optimum of the objective function - which is also the test statistic - occurs.
+ \item When Modified is True, opt.x is the vector of the value of x's where the infimum and supremum of \eqn{U_{n}} occur. 
+}
+} 
 
-\item{test.stat}{ the test statistic obtained through Khmaladze martingale transformation}
+\item{test.stat}{ 
+\itemize{
+ \item When Modified is False, test.stat is the test statistic obtained through Khmaladze martingale transformation.
+ \item When Modified is True, test.stat is the vector of the supremum of \eqn{U_{n}}, the infimum of \eqn{U_{n}}, and the difference of them. 
+}
+}
 
 \item{graph.data}{ a data frame which includes the information of the objective function.}
 
 \item{graph}{ a ggplot object which includes the graph of the objective function.}
 
 \item{intervals}{ a list of segmented intervals over which the graph of the objective function is defined.}
-
-\item{crit.value}{ a vector of critical values for the level of 0.01, 0.025, 0.05, and 0.10}
 
 \item{mu}{ the point estimate for the location parameter mu}
 
@@ -43,42 +53,65 @@ Performs goodness-of-fit test through Khmaladze matringale transformation
 n = 10
 X = rnorm(n, 1,3)    # Generate a random sample of n observations from N(1,3)
 strDist = "Normal"
-lResult = KhmaladzeTrans(X, strDist, bGraph=TRUE, nNum=10)
+Modified=FALSE
+lResult = KhmaladzeTrans(X, Modified, strDist, bGraph=TRUE, nNum=10)
 KMT_OptimalX = lResult$opt.x
 KMT_TestStat = lResult$test.stat
 KMT_DM = lResult$graph.data
 KMT_Graph = lResult$graph
+
+#### Draw the graph of the objective function
+KMT_Graph
+
 KMT_Intervals = lResult$intervals
-KMT_CriticalValue = lResult$crit.value
 KMT_Muhat = lResult$mu
 KMT_Sigmahat = lResult$sigma
+
+
 #####################
 
 #####################
 n = 10
 X = rlogis(n, 1,2)  # Generate a random sample of n observations from the logistic distribution
 strDist = "Logistic"
-lResult = KhmaladzeTrans(X, strDist, bGraph=TRUE, nNum=10)
-KMT_OptimalX = lResult$opt.x
-KMT_TestStat = lResult$test.stat
+Modified=TRUE
+lResult = KhmaladzeTrans(X, Modified, strDist, bGraph=TRUE, nNum=10)
+KMT_Optimal_Positive_X = lResult$opt.x[1]
+KMT_Optimal_Negative_X = lResult$opt.x[2]
+KMT_Postive_TestStat = lResult$test.stat[1]
+KMT_Negative_TestStat = lResult$test.stat[2]
+KMT_TestStat = lResult$test.stat[3]
 KMT_DM = lResult$graph.data
 KMT_Graph = lResult$graph
+
+#### Draw the graph of the objective function
+KMT_Graph
+
 KMT_Intervals = lResult$intervals
-KMT_CriticalValue = lResult$crit.value
 KMT_Muhat = lResult$mu
 KMT_Sigmahat = lResult$sigma
 #####################
+
+
+
+
+
 #####################
 n = 10
 X = rcauchy(n, 0,1)  # Generate a random sample of n observations from Cauchy distribution
 strDist = "Cauchy"
-lResult = KhmaladzeTrans(X, strDist, bGraph=TRUE, nNum=10)
+Modified=FALSE
+lResult = KhmaladzeTrans(X, Modified, strDist, bGraph=TRUE, nNum=10)
 KMT_OptimalX = lResult$opt.x
 KMT_TestStat = lResult$test.stat
 KMT_DM = lResult$graph.data
 KMT_Graph = lResult$graph
+
+#### Draw the graph of the objective function
+KMT_Graph
+
+
 KMT_Intervals = lResult$intervals
-KMT_CriticalValue = lResult$crit.value
 KMT_Muhat = lResult$mu
 KMT_Sigmahat = lResult$sigma
 #####################
@@ -88,5 +121,5 @@ KMT_Sigmahat = lResult$sigma
 
 [2] E.V. Khmaladze, H.L. Koul (2009). Goodness-of-fit problem for errors in nonparametric regression: distribution free approach. Ann. Statist., 37(6A) 3165-3185.
 
-[3] Kim, Jiwoong (2020). Implementation of a goodness-of-fit test through Khmaladze martingale transformation.
+[3] Kim, Jiwoong (2020). Implementation of a goodness-of-fit test through Khmaladze martingale transformation. Comp. Stat., 35(4): 1993-2017
 }

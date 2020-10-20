@@ -24,13 +24,19 @@ public:
     Div=1;
     PM=1;
     PM2=1;
+    
   }
   
   Normal(arma::vec xX, arma::mat IntMat) 
-      : X(xX.n_elem), SubGiVec1(769), SubGiVec2(769), SubGiVec3(769){
+      : X(xX.n_elem), SubGiVec1(2561), SubGiVec2(2561), SubGiVec3(2561){
     
     n = xX.n_elem;
     X = xX;
+    
+    Div=128;
+    PM=1280;
+    PM2=2561;
+    
     
     for(int i=1;i<=3;i++){
       if(i==1){
@@ -42,9 +48,6 @@ public:
       }
     }
 
-    Div=64;
-    PM=384;
-    PM2=769;
     
     
   }
@@ -78,7 +81,12 @@ public:
   double Gi(double y, double Xi);
   
   
+  
+  
 };
+
+
+
 
 
 double Normal::fn(double x){
@@ -275,28 +283,29 @@ double Normal::subGi(double x, int nI){
   double SP = 0;
   double dInc = 1/(Div); 
   
+  
   for(int ith=1;ith <= (PM2 - 1); ith++){
-    if(x<-6){
+    if(x<-10){
       nIndex = -1;
-      SP = -7;
+      SP = -11;
       break;
     }
     
-    if(x >= 6){
+    if(x >= 10){
       
       nIndex=(PM2 - 1);
-      SP=6;
+      SP=10;
       break;
     }
-    if( (x >= -6 + (ith-1)*dInc )&(x < -6 + ith*dInc ) ){
+    if( (x >= -10 + (ith-1)*dInc )&(x < -10 + ith*dInc ) ){
       nIndex  = ith-1;
-      SP = -6 + (ith-1)*dInc;
+      SP = -10 + (ith-1)*dInc;
       break;
     }
     
   }
   
-  
+
   
   
   if(nIndex == -1){
@@ -323,9 +332,9 @@ double Normal::subGi(double x, int nI){
   
   
   
-  const double nGap = 0.0001;  // 10^5
+  const double nGap = 1e-4;  // 10^5
   
-  int nLen = 100000;     
+  int nLen = 1e+5;     
   
   //int nLen = 100000;
   

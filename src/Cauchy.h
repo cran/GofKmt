@@ -27,6 +27,8 @@ public:
     Div=1;
     PM=1;
     PM2=1;
+    
+    
   }
   
   Cauchy(arma::vec xX, arma::mat IntMat) 
@@ -38,6 +40,7 @@ public:
     Div=128;
     PM=1280;
     PM2=2561;
+    
     
     pi = 3.14159265;
     
@@ -83,8 +86,9 @@ public:
   
   
   
-  
 };
+
+
 
 double Cauchy::fn(double x){
   return ( 1 / ( pi*(1+pow(x,2)) ));
@@ -272,8 +276,9 @@ double Cauchy::subGi(double x, int nI){
   double SP = 0;
   double dInc = 1/(Div); 
   
+
   for(int ith=1;ith <= (PM2 - 1); ith++){
-    if(x< -10){
+    if(x<-10){
       nIndex = -1;
       SP = -11;
       break;
@@ -293,6 +298,7 @@ double Cauchy::subGi(double x, int nI){
     
   }
   
+
   if(nIndex == -1){
     
     if(nI == 1){
