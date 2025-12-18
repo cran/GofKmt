@@ -1,29 +1,18 @@
 
-#ifndef xxCOMMON_H
-#define xxCOMMON_H
-
-//#include <RcppArmadillo.h>
+#ifndef __COMMON_H
+#define __COMMON_H
 
 
-String strNormal("Normal");
-String strLogistic("Logistic");
-String strCauchy("Cauchy");
-String strExponential("Exponential");
+arma::vec GetLineVec(arma::vec X, int nNum, double sighat);
 
-String strPoisson("Poisson");
-String strGamma("Gamma");
-
-
-
-
-double AbsVal(double x);
-arma::vec GetLineVec(int n);
-
-
-arma::vec GetLineVec(arma::vec X, int nNum){
-  
+arma::vec GetLineVec(arma::vec X, int nNum=10, double sighat=0){
   
   double dAdd = 2.5;
+  
+  if(sighat>0){
+    dAdd = 2*sighat;
+  }
+  
   int n=X.n_elem;
   int nLen = (n+1)*nNum;
   
@@ -41,16 +30,21 @@ arma::vec GetLineVec(arma::vec X, int nNum){
     nIndex = (i-1)*nNum;
     
     if(i==1){
-      EP = X[i-1]-del;
+      EP = X[i-1];
       SP = EP - dAdd;
     }else{
-      EP = X[i-1]-del;
+      EP = X[i-1];
       SP = X[i-2];
     }
-    dGap = (EP-SP)/(nNum-1);
+    dGap = (EP-SP)/nNum;
     
     for(int j=1;j<=nNum;j++){
-      out[nIndex+j-1] = SP + dGap*(j-1);
+      if(j<nNum){
+        out[nIndex+j-1] = SP + dGap*(j-1);
+      }else{
+        out[nIndex+j-1] = EP-del;
+      }
+      
     }
     
   }
@@ -62,26 +56,22 @@ arma::vec GetLineVec(arma::vec X, int nNum){
   SP = X[n-1];
   EP = SP + dAdd;
   
-  dGap = (EP-SP)/(nNum-1);
+  dGap = (EP-SP)/nNum;
   
   for(int j=1;j<=nNum;j++){
-    out[nIndex+j-1] = SP + dGap*(j-1);
+    
+    if(j<nNum){
+      out[nIndex+j-1] = SP + dGap*(j-1);
+    }else{
+      out[nIndex+j-1] = EP-del;
+    }
+    
   }
-  
   
   
   return out;
 }
 
-double AbsVal(double x){
-  
-  if(x<0){
-    return -x;
-  }else{
-    return x;
-  }
-  
-}
 
 
 
